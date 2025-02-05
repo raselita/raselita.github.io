@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reproductor Automático de Mensaje</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@300..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    /* Fondo oscuro */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #121212;
+      color: #fff;
+      font-family: "Red Hat Display", sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding-top: 40px; /* Agregamos espacio extra arriba */
+    }
+
+    /* Contenedor principal */
+    .player {
+      width: 90%;
+      max-width: 350px;
+      background: #1e1e1e;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Texto superior */
+    .playing-info {
+      text-align: center;
+      font-size: 14px;
+      font-weight: 300;
+      color: #b3b3b3;
+      margin-bottom: 40px; /* Más espacio entre el texto y la imagen */
+    }
+
+    .playing-info h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      margin: 5px 0 50px;
+    }
+
+    /* Imagen de portada centrada */
+    .cover {
+      width: 100%;
+      max-width: 250px; /* Tamaño más controlado */
+      height: 250px;
+      overflow: hidden;
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .cover img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+
+    /* Controles debajo de la imagen */
+    .controls {
+      display: flex;
+      justify-content: space-around;
+      width: 100%;
+      margin-bottom: 15px;
+    }
+
+    .controls button {
+      background: #1db954;
+      border: none;
+      padding: 12px;
+      color: white;
+      font-size: 1.5em; /* Tamanho aumentado para iconos */
+      border-radius: 50%;
+      cursor: pointer;
+      transition: 0.3s;
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .controls button:hover {
+      background: #17a74a;
+    }
+
+    /* Área de texto con fondo */
+    .lyricDisplay {
+      width: 100%;
+      height: 200px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.2em;
+      padding: 10px;
+      text-align: center;
+      margin-top: 5px;
+    }
+
+    /* Estilo de cada fragmento de texto */
+    .lyricSegment {
+      display: none;
+    }
+
+    .lyricSegment.active {
+      display: block;
+    }
+
+    /* Barra de progreso */
+    .progressBar {
+      width: 100%;
+      height: 5px;
+      background: #333;
+      border-radius: 5px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+
+    .progress {
+      height: 100%;
+      background: #1db954;
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+
+    /* Ajustes específicos para móviles */
+    @media (max-width: 600px) {
+      body {
+        padding-top: 60px; /* Más espacio en la parte superior en móviles */
+      }
+
+      .playing-info {
+        font-size: 16px;
+        margin-bottom: 50px;
+      }
+
+      .playing-info h2 {
+        font-size: 20px;
+        margin-bottom: 60px;
+      }
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- Agregar el audio de fondo -->
+  <audio id="backgroundAudio" autoplay loop>
+    <source src="./name.mp3" type="audio/mp3">
+    Tu navegador no soporta el elemento de audio.
+  </audio>
+
+  <div class="player">
+    <!-- Texto superior -->
+    <div class="playing-info">
+      <p>Reproduciendo para ti</p>
+      <h2>Para Rachel, mi muchachita</h2>
+    </div>
+
+    <!-- Imagen de portada centrada -->
+    <div class="cover">
+      <img src="../muchacha/muchacha.jpeg" alt="Portada" />
+    </div>
+
+    <!-- Controles debajo de la imagen -->
+    <div class="controls">
+      <button id="prevBtn"><i class="fas fa-backward"></i></button>
+      <button id="playPauseBtn"><i class="fas fa-play"></i></button>
+      <button id="nextBtn"><i class="fas fa-forward"></i></button>
+    </div>
+
+    <!-- Área de texto con fondo -->
+    <div class="lyricDisplay" id="lyricDisplay">
+      <!-- Los segmentos de texto se inyectarán aquí -->
+    </div>
+
+    <!-- Barra de progreso -->
+    <div class="progressBar">
+      <div class="progress" id="progress"></div>
+    </div>
+  </div>
+
+  <script>
+    const segments = [
+      "Que tu fe sea como un faro, siempre guiando tu camino, y que tu valentía brille más que el sol.",
+      "El Señor es tu fortaleza, no hay miedo que pueda vencerte cuando Él camina contigo.",
+      "Eres una mujer de gran valor, no te rindas, porque las promesas de Dios son para ti.",
+      "El amor de Dios te cubre y te eleva, eres más fuerte de lo que imaginas, Él está contigo en todo momento."
+    ];
+
+    const display = document.getElementById('lyricDisplay');
+    const progressEl = document.getElementById('progress');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    let currentSegment = 0;
+    let interval;
+    let isPlaying = true;
+
+    function showSegment(index) {
+      display.innerHTML = `<p class="lyricSegment active">${segments[index]}</p>`;
+    }
+
+    function calculateSegmentDuration(text) {
+      const words = text.split(/\s+/).filter(Boolean).length;
+      return Math.max((words / 3) * 1000, 4000); // Mínimo 4s
+    }
+
+    function animateProgressBar(duration) {
+      clearInterval(interval);
+      let startTime = Date.now();
+      progressEl.style.width = "0%";
+      interval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        let percent = (elapsed / duration) * 100;
+        if (percent >= 100) {
+          clearInterval(interval);
+          progressEl.style.width = "100%";
+          if (isPlaying) showNextSegment();
+        } else {
+          progressEl.style.width = percent + "%";
+        }
+      }, 100);
+    }
+
+    function showNextSegment() {
+      currentSegment = (currentSegment + 1) % segments.length;
+      showSegment(currentSegment);
+      animateProgressBar(calculateSegmentDuration(segments[currentSegment]));
+    }
+
+    function togglePlayPause() {
+      isPlaying = !isPlaying;
+      playPauseBtn.innerHTML = isPlaying ? "<i class='fas fa-pause'></i>" : "<i class='fas fa-play'></i>";
+      if (isPlaying) showNextSegment();
+    }
+
+    prevBtn.addEventListener("click", showNextSegment);
+    playPauseBtn.addEventListener("click", togglePlayPause);
+
+    window.addEventListener("load", showNextSegment);
+  </script>
+
+</body>
+</html>
